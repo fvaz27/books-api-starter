@@ -2,14 +2,15 @@ const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
 const db = require("./db")
-const Book = require("./models/book")
+const {Book, Review} = require("./models")
+// const Review = require("./models/Review")
 // db.authenticate().then(() => console.log("DB connected")).catch(console.error)
 
 // TODO: Workshop Part 1: import your db connection from ./db once it's wired up.
 // TODO: Workshop Part 2: import your Book model from ./models/Book once it's defined.
-
 const app = express();
 const PORT = 8080;
+
 
 // middleware ---------------------------------------
 app.use(express.json()); // lets the server read JSON sent in a request body (req.body)
@@ -57,7 +58,12 @@ app.get("/api/books/:id", async(request, response, next) => {
   try {
     const id = Number(request.params.id); // request.params.id is always a string — Number() makes it comparable
     // const book = books.find((b) => b.id === id);
-    const matchedBook = await Book.findByPk(id);
+    const matchedBook = await Book.findByPk(id,{
+      include: Review
+  });
+
+
+
     if (!matchedBook) {
       return response.sendStatus(404);
     }
@@ -91,6 +97,32 @@ app.post("/api/books", async(request, response, next) => {
     next(error);
   }
 });
+
+app.post("/api/books/:bookId/reviews", async(request, response, next) => {
+  try {
+    const {reviewer, rating, comment} = request.body
+    const BookId = Number(request.params.bookId)
+
+    // const book = await Book.findByPk(BookId, {
+    //   include: Review
+    // })
+
+    
+
+    const newReview = {
+      reviewer, rating, comment, BookId
+    }
+    console.log(newReview, "I AM HERE")
+
+    await Review.create(newReview)
+    response.status(201).json(newReview)
+
+
+
+  } catch (error) {
+    next(error)
+  }
+})
 
 // Part 6: PATCH an existing book — only changes the fields that were sent
 // TODO: Workshop: find the book the same Sequelize way as the GET-one route above,
@@ -159,7 +191,7 @@ async function startApp() {
   // model. Call the sync method on your db connection and await it — the
   // table must exist before app.listen lets any request in.
 
-  db.sync().then(() => {
+  await db.sync().then(() => {
     app.listen(PORT, () => console.log(`Server running on port http://localhost:${PORT}`));
   })
   
