@@ -51,6 +51,23 @@ app.get("/api/books", async(request, response, next) => {
   }
 });
 
+app.get("/api/books/:bookId/reviews", async(request,response,next) => {
+  try {
+    
+    const id = Number(request.params.bookId);
+
+    const matchedBook= await Review.findAll({
+      where: {BookId: id}
+    })
+
+    console.log(matchedBook)
+    
+    response.json(matchedBook)
+  } catch (error) {
+    next(error);
+  }
+})
+
 // Part 4: GET one book by id
 // TODO: Workshop: swap `.find()` for the Book method that looks up by primary key.
 // It returns null when nothing matches — your 404 check below still applies.
@@ -107,12 +124,14 @@ app.post("/api/books/:bookId/reviews", async(request, response, next) => {
     //   include: Review
     // })
 
-    
+    if (!rating || (rating < 1 || rating > 5)){
+      return response.json("message: Rating must be between 1-5, thank you!").sendStatus(404)
+    }
 
     const newReview = {
       reviewer, rating, comment, BookId
     }
-    console.log(newReview, "I AM HERE")
+    // console.log(newReview, "I AM HERE")
 
     await Review.create(newReview)
     response.status(201).json(newReview)
@@ -173,6 +192,21 @@ app.delete("/api/books/:id", async(request, response, next) => {
     next(error);
   }
 });
+
+app.delete("/api/reviews/:id", async(request, response, next)=>{
+  try {
+    const id = Number(request.params.id)
+    const review = await Review.findByPk(id)
+    if(!review){
+      return response.sendStatus(404)
+    }
+    await review.destroy()
+    response.sendStatus(204)
+  } catch (error) {
+    next(error);
+  }
+
+})
 
 // TODO: Workshop cleanup: once all five routes above use Book instead of `books`,
 // delete the `books` array and `nextId` variable up top — nothing should
