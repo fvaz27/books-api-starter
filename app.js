@@ -133,7 +133,7 @@ app.post("/api/books/:bookId/reviews", async(request, response, next) => {
     }
     // console.log(newReview, "I AM HERE")
 
-    await Review.create(newReview)
+    await Review.create(newReview) //await Review.create(...request.body, BookId) <-- can also do it this way, saves time not best practice to do it this way
     response.status(201).json(newReview)
 
 
